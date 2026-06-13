@@ -10,7 +10,7 @@ V1.3.2 修复bug：
   1. 搜索改为点击放大镜弹出输入框，默认隐藏
   2. 弹窗底部按钮与导航触发键位置冲突问题修复
   3. 导航触发图标替换为自定义猫咪SVG，位置下移贴近底部
-  4. 版权协议改为仅首次进入弹出
+  4. 版权协议改为仅首次进入弹出，修复按钮失效问题
 版权 ©2026 原创作者 b站@布儡是k2，禁止篡改、倒卖、二次分发
 -->
 <!DOCTYPE html>
@@ -675,9 +675,10 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
             const agreeCheck = document.getElementById('agreeCheck');
             const enterBtn = document.getElementById('enterBtn');
 
+            // 如果已经同意过，直接隐藏弹窗并渲染列表
             if(hasAgreed === "true"){
                 copyrightModal.style.display = 'none';
-                document.body.style.display = 'block';
+                renderList();
             }else{
                 agreeCheck.onchange = () => {
                     if(agreeCheck.checked) enterBtn.classList.add('active');
@@ -893,4 +894,122 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
 
             // 全选按钮
             selectAllBtn.onclick = ()=>{
-                goodsList.forEach(item=>
+                goodsList.forEach(item=>selectedIds.add(item.id));
+                renderStatList();
+            }
+            // 取消全选
+            cancelAllBtn.onclick = ()=>{
+                selectedIds.clear();
+                renderStatList();
+            }
+
+            // 打开新增弹窗
+            addBtn.onclick = () => {
+                modalTitle.innerText = "添加物品";
+                editId.value = "";
+                nameInput.value = "";
+                cateSelect.value = "数码";
+                priceInput.value = "";
+                minYear.value = "";
+                minMonth.value = "";
+                minDay.value = "";
+                maxYear.value = "";
+                maxMonth.value = "";
+                maxDay.value = "";
+                fileInput.value = "";
+                fileNameText.innerText = "未选择文件";
+                tempImg = "";
+                delBtn.style.display = "none";
+                editModal.style.display = "flex";
+            }
+
+            // 打开编辑弹窗
+            function openEdit(id){
+                const item = goodsList.find(v=>v.id===id);
+                if(!item) return;
+                modalTitle.innerText = "编辑物品";
+                editId.value = id;
+                nameInput.value = item.name;
+                cateSelect.value = item.category;
+                priceInput.value = item.price;
+                minYear.value = item.minYear || "";
+                minMonth.value = item.minMonth || "";
+                minDay.value = item.minDay || "";
+                maxYear.value = item.maxYear || "";
+                maxMonth.value = item.maxMonth || "";
+                maxDay.value = item.maxDay || "";
+                tempImg = item.img||"";
+                fileNameText.innerText = item.img ? "已上传图片" : "未选择文件";
+                delBtn.style.display = "block";
+                editModal.style.display = "flex";
+            }
+
+            // 关闭弹窗
+            cancelBtn.onclick = () => editModal.style.display = "none";
+
+            // 保存物品
+            saveBtn.onclick = () => {
+                const name = nameInput.value.trim();
+                const category = cateSelect.value;
+                const price = priceInput.value;
+                const my = Number(minYear.value || 0);
+                const mm = Number(minMonth.value || 0);
+                const md = Number(minDay.value || 0);
+                const minTotal = calcTotalDay(my, mm, md);
+                const may = Number(maxYear.value || 0);
+                const mam = Number(maxMonth.value || 0);
+                const mad = Number(maxDay.value || 0);
+                const maxTotal = calcTotalDay(may, mam, mad);
+
+                if(!name || !price || minTotal <= 0){
+                    return alert("名称、总价必填，最少可用时长至少填写一项");
+                }
+                if(maxTotal > 0 && maxTotal < minTotal){
+                    return alert("最多可用时长不能小于最少可用时长");
+                }
+
+                const id = editId.value;
+                if(id){
+                    const idx = goodsList.findIndex(v=>v.id===id);
+                    goodsList[idx] = {
+                        ...goodsList[idx],
+                        name,category,price,
+                        minYear:my,minMonth:mm,minDay:md,minTotal,
+                        maxYear:may,maxMonth:mam,maxDay:mad,maxTotal,
+                        img: tempImg || goodsList[idx].img
+                    }
+                }else{
+                    const newItem = {
+                        id: Date.now().toString(),
+                        name,category,price,
+                        minYear:my,minMonth:mm,minDay:md,minTotal,
+                        maxYear:may,maxMonth:mam,maxDay:mad,maxTotal,
+                        img: tempImg
+                    }
+                    goodsList.push(newItem);
+                }
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(goodsList));
+                editModal.style.display = "none";
+                renderList();
+            }
+
+            // 删除物品
+            delBtn.onclick = () => {
+                const id = editId.value;
+                if(!id) return;
+                if(!confirm("确定要删除该物品吗？")) return;
+                goodsList = goodsList.filter(v=>v.id!==id);
+                selectedIds.delete(id);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(goodsList));
+                editModal.style.display = "none";
+                renderList();
+            }
+
+            // 首次加载渲染列表
+            if(hasAgreed === "true"){
+                renderList();
+            }
+        });
+    </script>
+</body>
+</html>
