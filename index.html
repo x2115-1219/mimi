@@ -1,16 +1,9 @@
 <!--
-米仓小记 V1.3.2
-更新日志：
-V1.0.0 基础功能+版权弹窗+本地存储/增删改
-V1.1.0 新增分类筛选，时长改为年/月/天录入
-V1.2.0 区分最少/最多可用时长，支持区间日均计算
-V1.3.0 新增统计页、单选/全选、合计日均花费统计
-V1.3.1 布局优化：搜索框调整、自动隐藏导航栏、小猫图标、上传按钮样式修改
-V1.3.2 修复bug：
-  1. 搜索改为点击放大镜弹出输入框，默认隐藏
-  2. 弹窗底部按钮与导航触发键位置冲突问题修复
-  3. 导航触发图标替换为自定义猫咪SVG，位置下移贴近底部
-  4. 版权协议改为仅首次进入弹出，修复按钮失效问题
+米仓小记 V1.3.3 最终修复版
+修复：
+- 猫咪导航按钮点击无反应（z-index层级、pointer-events、事件绑定）
+- 版权弹窗只首次弹出
+- 导航栏弹出/隐藏正常、页面切换正常
 版权 ©2026 原创作者 b站@布儡是k2，禁止篡改、倒卖、二次分发
 -->
 <!DOCTYPE html>
@@ -32,40 +25,55 @@ V1.3.2 修复bug：
             min-height: 100vh;
             padding-bottom: 60px;
         }
-        /* 底部切换导航 */
+
+        /* 底部导航容器 */
         .tab-nav-wrapper {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: auto;
-            background: transparent;
+            height: 50px;
             z-index: 999;
+            pointer-events: none; /* 让背景不挡点击 */
         }
+
+        /* 猫咪触发按钮（最顶层、可点击） */
         .tab-trigger {
             position: fixed;
-            bottom: 5px;
-            right: 15px;
-            cursor: pointer;
-            z-index: 1000;
-        }
-        .tab-trigger svg {
+            bottom: 2px;
+            right: 12px;
             width: 50px;
             height: 50px;
-            opacity: 0.8;
+            cursor: pointer;
+            z-index: 1001; /* 最高层级 */
+            pointer-events: auto !important; /* 强制可点击 */
         }
+        .tab-trigger svg {
+            width: 100%;
+            height: 100%;
+            opacity: 0.85;
+        }
+
+        /* 导航栏（默认隐藏） */
         .tab-nav {
             display: flex;
             justify-content: space-around;
             background: #fff;
             border-top: 1px solid #e2d2b0;
             height: 50px;
-            transition: transform 0.3s ease;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            transition: transform 0.25s ease;
             transform: translateY(100%);
+            z-index: 1000;
+            pointer-events: auto;
         }
         .tab-nav.show {
             transform: translateY(0);
         }
+
         .nav-item {
             flex: 1;
             display: flex;
@@ -86,13 +94,11 @@ V1.3.2 修复bug：
             color: #b89650;
             font-weight: 500;
         }
-        .page {
-            display: none;
-        }
-        .page.active {
-            display: block;
-        }
-        /* 启动版权全屏弹窗 最高层级优先渲染 */
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* 版权弹窗 */
         .copyright-modal {
             position: fixed;
             inset: 0;
@@ -152,289 +158,62 @@ V1.3.2 修复bug：
             color: #999;
             margin-top: 10px;
         }
-        /* 顶部搜索栏（点击放大镜弹出） */
-        .search-trigger {
-            text-align: right;
-            margin-bottom: 12px;
-        }
-        .search-trigger svg {
-            width: 24px;
-            height: 24px;
-            fill: #b89650;
-            cursor: pointer;
-        }
-        .search-bar {
-            display: none;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        #searchInput {
-            flex: 1;
-            padding: 10px 12px;
-            border: 1px solid #e2d2b0;
-            border-radius: 8px;
-            background: #fff;
-            font-size: 15px;
-        }
-        #searchImgBtn {
-            padding: 0 14px;
-            background: #b89650;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        /* 分类筛选栏 */
-        .category-tab {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            margin-bottom: 16px;
-        }
-        .category-tab::-webkit-scrollbar {
-            height: 3px;
-        }
-        .tab-item {
-            flex-shrink: 0;
-            padding: 6px 14px;
-            border-radius: 20px;
-            border: 1px solid #d4c3a3;
-            background: #fff;
-            color: #6b5427;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .tab-item.active {
-            background: #b89650;
-            color: white;
-            border-color: #b89650;
-        }
-        /* 头部操作栏 */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        .header h1 {
-            font-size: 20px;
-            color: #6b5427;
-        }
-        #addBtn {
-            padding: 9px 16px;
-            background: #7d6432;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        /* 物品卡片容器 */
-        .container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
-        }
-        .empty-tip {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-            font-size: 15px;
-        }
-        .card {
-            background: #ffffff;
-            padding: 14px;
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(120,90,40,0.12);
-            cursor: pointer;
-        }
-        .card-img {
-            width: 100%;
-            height: 110px;
-            object-fit: cover;
-            border-radius: 6px;
-            background: #f3eddb;
-            margin-bottom: 10px;
-        }
-        .card-name {
-            font-weight: 500;
-            color: #333;
-            margin-bottom: 4px;
-        }
-        .card-cate {
-            font-size: 12px;
-            color: #b89650;
-            margin-bottom: 4px;
-        }
-        .card-cost {
-            font-size: 13px;
-            color: #886c3b;
-        }
-        /* 新增/编辑弹窗 */
-        .modal-wrap {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            z-index: 998;
-        }
-        .modal {
-            width: 100%;
-            max-width: 420px;
-            background: #fff;
-            padding: 22px;
-            border-radius: 12px;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        .modal h3 {
-            color: #6b5427;
-            margin-bottom: 18px;
-        }
-        .form-item {
-            margin-bottom: 14px;
-        }
-        label {
-            display: block;
-            font-size: 14px;
-            margin-bottom: 5px;
-            color: #555;
-        }
-        input[type="text"],input[type="number"],select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #e2d2b0;
-            border-radius: 7px;
-        }
-        .year-month-day-row {
-            display: flex;
-            gap: 6px;
-        }
-        .year-month-day-row input {
-            flex:1;
-        }
-        .file-upload-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .add-circle-icon {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #b89650;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #b89650;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        #fileInput {
-            display: none;
-        }
-        .btns-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 22px;
-        }
-        .save-btn {
-            flex: 1;
-            padding: 11px;
-            border: none;
-            border-radius: 7px;
-            background: #b89650;
-            color: white;
-            cursor: pointer;
-        }
-        .cancel-btn {
-            flex: 1;
-            padding: 11px;
-            border: 1px solid #d4c3a3;
-            background: #fff;
-            border-radius: 7px;
-            cursor: pointer;
-        }
-        .del-btn {
-            width: 100%;
-            margin-top: 10px;
-            padding: 11px;
-            background: #c45141;
-            color: white;
-            border: none;
-            border-radius: 7px;
-            cursor: pointer;
-        }
-        /* 统计页面样式 */
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        .stat-total-box {
-            background: #fff;
-            padding: 14px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-        }
-        .stat-total-text {
-            font-size: 16px;
-            color: #6b5427;
-        }
-        .stat-total-num {
-            font-size: 22px;
-            font-weight: bold;
-            color: #b89650;
-            margin-top: 6px;
-        }
-        .select-all-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .select-btn {
-            padding: 7px 14px;
-            background: #fff;
-            border: 1px solid #d4c3a3;
-            border-radius: 6px;
-            color: #6b5427;
-            cursor: pointer;
-        }
-        .stat-item-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .stat-item-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #fff;
-            padding: 12px;
-            border-radius: 8px;
-        }
-        .stat-item-info {
-            flex: 1;
-        }
-        .stat-name {
-            font-weight: 500;
-            color: #333;
-        }
-        .stat-cate-cost {
-            font-size: 13px;
-            color: #886c3b;
-            margin-top: 3px;
-        }
+
+        /* 搜索、卡片、弹窗等样式不变，直接沿用 */
+        .search-trigger { text-align: right; margin-bottom: 12px; }
+        .search-trigger svg { width: 24px; height: 24px; fill: #b89650; cursor: pointer; }
+        .search-bar { display: none; gap: 8px; margin-bottom: 12px; }
+        #searchInput { flex: 1; padding: 10px 12px; border: 1px solid #e2d2b0; border-radius: 8px; background: #fff; font-size: 15px; }
+        #searchImgBtn { padding: 0 14px; background: #b89650; color: white; border: none; border-radius: 8px; cursor: pointer; }
+
+        .category-tab { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; }
+        .category-tab::-webkit-scrollbar { height: 3px; }
+        .tab-item { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: 1px solid #d4c3a3; background: #fff; color: #6b5427; font-size: 14px; cursor: pointer; }
+        .tab-item.active { background: #b89650; color: white; border-color: #b89650; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .header h1 { font-size: 20px; color: #6b5427; }
+        #addBtn { padding: 9px 16px; background: #7d6432; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+
+        .container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        .empty-tip { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #999; font-size: 15px; }
+        .card { background: #ffffff; padding: 14px; border-radius: 10px; box-shadow: 0 2px 6px rgba(120,90,40,0.12); cursor: pointer; }
+        .card-img { width: 100%; height: 110px; object-fit: cover; border-radius: 6px; background: #f3eddb; margin-bottom: 10px; }
+        .card-name { font-weight: 500; color: #333; margin-bottom: 4px; }
+        .card-cate { font-size: 12px; color: #b89650; margin-bottom: 4px; }
+        .card-cost { font-size: 13px; color: #886c3b; }
+
+        .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 998; }
+        .modal { width: 100%; max-width: 420px; background: #fff; padding: 22px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
+        .modal h3 { color: #6b5427; margin-bottom: 18px; }
+        .form-item { margin-bottom: 14px; }
+        label { display: block; font-size: 14px; margin-bottom: 5px; color: #555; }
+        input[type="text"],input[type="number"],select { width: 100%; padding: 10px; border: 1px solid #e2d2b0; border-radius: 7px; }
+        .year-month-day-row { display: flex; gap: 6px; }
+        .year-month-day-row input { flex:1; }
+        .file-upload-wrap { display: flex; align-items: center; gap: 10px; }
+        .add-circle-icon { width: 40px; height: 40px; border: 2px solid #b89650; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #b89650; font-size: 20px; font-weight: bold; }
+        #fileInput { display: none; }
+        .btns-row { display: flex; gap: 10px; margin-top: 22px; }
+        .save-btn { flex: 1; padding: 11px; border: none; border-radius: 7px; background: #b89650; color: white; cursor: pointer; }
+        .cancel-btn { flex: 1; padding: 11px; border: 1px solid #d4c3a3; background: #fff; border-radius: 7px; cursor: pointer; }
+        .del-btn { width: 100%; margin-top: 10px; padding: 11px; background: #c45141; color: white; border: none; border-radius: 7px; cursor: pointer; }
+
+        .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .stat-total-box { background: #fff; padding: 14px; border-radius: 10px; margin-bottom: 16px; }
+        .stat-total-text { font-size: 16px; color: #6b5427; }
+        .stat-total-num { font-size: 22px; font-weight: bold; color: #b89650; margin-top: 6px; }
+        .select-all-bar { display: flex; gap: 10px; margin-bottom: 12px; }
+        .select-btn { padding: 7px 14px; background: #fff; border: 1px solid #d4c3a3; border-radius: 6px; color: #6b5427; cursor: pointer; }
+        .stat-item-list { display: flex; flex-direction: column; gap: 8px; }
+        .stat-item-row { display: flex; align-items: center; gap: 10px; background: #fff; padding: 12px; border-radius: 8px; }
+        .stat-item-info { flex: 1; }
+        .stat-name { font-weight: 500; color: #333; }
+        .stat-cate-cost { font-size: 13px; color: #886c3b; margin-top: 3px; }
     </style>
 </head>
 <body>
-    <!-- 启动全屏版权弹窗 -->
+    <!-- 版权弹窗 -->
     <div class="copyright-modal" id="copyrightModal">
         <div class="copyright-box">
             <h2>米仓小记 · 版权协议</h2>
@@ -454,20 +233,18 @@ V1.3.2 修复bug：
                 <span>我已完整阅读并同意全部版权协议</span>
             </div>
             <button id="enterBtn">进入米仓小记</button>
-            <div class="version-tip">当前版本：V1.3.2</div>
+            <div class="version-tip">当前版本：V1.3.3</div>
         </div>
     </div>
 
-    <!-- 首页页面 -->
+    <!-- 首页 -->
     <div class="page active" id="homePage">
-        <!-- 搜索触发放大镜 -->
         <div class="search-trigger" id="searchTrigger">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
         </div>
-        <!-- 点击后显示的搜索栏 -->
         <div class="search-bar" id="searchBar">
             <input type="text" id="searchInput" placeholder="输入物品名称，跳转百度搜图找图标">
             <button id="searchImgBtn">搜图</button>
@@ -488,7 +265,7 @@ V1.3.2 修复bug：
         <div class="container" id="cardBox"></div>
     </div>
 
-    <!-- 统计页面 -->
+    <!-- 统计页 -->
     <div class="page" id="statPage">
         <div class="stat-header">
             <h1>统计汇总</h1>
@@ -504,9 +281,9 @@ V1.3.2 修复bug：
         <div class="stat-item-list" id="statListBox"></div>
     </div>
 
-    <!-- 底部切换导航 -->
+    <!-- 底部导航 -->
     <div class="tab-nav-wrapper">
-        <!-- 右下角自定义猫咪SVG图标 -->
+        <!-- 猫咪按钮（最顶层） -->
         <div class="tab-trigger" id="tabTrigger">
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
@@ -595,6 +372,7 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
 </g>
 </svg>
         </div>
+        <!-- 导航栏 -->
         <div class="tab-nav" id="tabNav">
             <div class="nav-item active" data-page="homePage">
                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -611,7 +389,7 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
         </div>
     </div>
 
-    <!-- 新增/编辑弹窗 -->
+    <!-- 弹窗 -->
     <div class="modal-wrap" id="editModal">
         <div class="modal">
             <h3 id="modalTitle">添加物品</h3>
@@ -641,7 +419,6 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
                 <label>购入总价</label>
                 <input type="number" step="0.01" id="priceInput" placeholder="0.00">
             </div>
-            <!-- 最少使用时长 -->
             <div class="form-item">
                 <label>最少可用时长（必填）</label>
                 <div class="year-month-day-row">
@@ -650,7 +427,6 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
                     <input type="number" id="minDay" placeholder="天" min="0">
                 </div>
             </div>
-            <!-- 最多使用时长 -->
             <div class="form-item">
                 <label>最多可用时长（选填）</label>
                 <div class="year-month-day-row">
@@ -669,33 +445,29 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 版权协议仅首次进入弹窗
+            // 版权弹窗逻辑（只首次弹出）
             const hasAgreed = localStorage.getItem("micang_agreed_copyright");
             const copyrightModal = document.getElementById('copyrightModal');
             const agreeCheck = document.getElementById('agreeCheck');
             const enterBtn = document.getElementById('enterBtn');
 
-            // 如果已经同意过，直接隐藏弹窗并渲染列表
-            if(hasAgreed === "true"){
+            if (hasAgreed === "true") {
                 copyrightModal.style.display = 'none';
-                renderList();
-            }else{
+            } else {
                 agreeCheck.onchange = () => {
-                    if(agreeCheck.checked) enterBtn.classList.add('active');
-                    else enterBtn.classList.remove('active');
-                }
+                    enterBtn.classList.toggle('active', agreeCheck.checked);
+                };
                 enterBtn.onclick = () => {
-                    if(!agreeCheck.checked) return;
+                    if (!agreeCheck.checked) return;
                     localStorage.setItem("micang_agreed_copyright", "true");
                     copyrightModal.style.display = 'none';
-                    renderList();
-                }
+                };
             }
 
-            // 自动隐藏导航栏逻辑
+            // 导航核心逻辑（修复点击无反应）
             const tabNav = document.getElementById('tabNav');
             const tabTrigger = document.getElementById('tabTrigger');
-            let hideTimer;
+            let hideTimer = null;
 
             function showNav() {
                 tabNav.classList.add('show');
@@ -709,64 +481,65 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
                 hideTimer = setTimeout(hideNav, 2000);
             }
 
-            tabTrigger.addEventListener('click', showNav);
-            document.body.addEventListener('touchstart', resetHideTimer);
-            document.body.addEventListener('click', resetHideTimer);
-            resetHideTimer();
+            // 强制绑定点击事件（修复失效）
+            tabTrigger.addEventListener('click', function(e) {
+                e.stopPropagation(); // 防止事件冒泡
+                showNav();
+            });
+            // 触摸也触发（移动端）
+            tabTrigger.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+                showNav();
+            });
 
-            // 搜索框点击放大镜显示/隐藏
+            // 页面点击/触摸重置计时器
+            document.body.addEventListener('click', resetHideTimer);
+            document.body.addEventListener('touchstart', resetHideTimer);
+
+            // 页面切换
+            const navItems = document.querySelectorAll(".nav-item");
+            const pages = document.querySelectorAll(".page");
+            navItems.forEach(nav => {
+                nav.addEventListener('click', function() {
+                    const targetPageId = this.dataset.page;
+                    navItems.forEach(n => n.classList.remove("active"));
+                    this.classList.add("active");
+                    pages.forEach(p => p.classList.remove("active"));
+                    document.getElementById(targetPageId).classList.add("active");
+                    if (targetPageId === "statPage") renderStatList();
+                });
+            });
+
+            // 搜索、添加、本地存储等逻辑（不变）
             const searchTrigger = document.getElementById('searchTrigger');
             const searchBar = document.getElementById('searchBar');
             searchTrigger.addEventListener('click', () => {
-                if(searchBar.style.display === 'flex'){
-                    searchBar.style.display = 'none';
-                }else{
-                    searchBar.style.display = 'flex';
-                }
+                searchBar.style.display = searchBar.style.display === 'flex' ? 'none' : 'flex';
             });
 
-            // 页面切换逻辑
-            const navItems = document.querySelectorAll(".nav-item");
-            const pages = document.querySelectorAll(".page");
-            navItems.forEach(nav=>{
-                nav.onclick = ()=>{
-                    const targetPageId = nav.dataset.page;
-                    navItems.forEach(n=>n.classList.remove("active"));
-                    nav.classList.add("active");
-                    pages.forEach(p=>p.classList.remove("active"));
-                    document.getElementById(targetPageId).classList.add("active");
-                    if(targetPageId === "statPage") renderStatList();
-                }
-            })
-
-            // 顶部搜索跳转百度图片
             const searchInput = document.getElementById('searchInput');
             const searchImgBtn = document.getElementById('searchImgBtn');
             searchImgBtn.onclick = () => {
-                let key = searchInput.value.trim();
-                if(!key) return alert("请输入物品名称");
+                const key = searchInput.value.trim();
+                if (!key) return alert("请输入物品名称");
                 window.open(`https://image.baidu.com/search/index?tn=baiduimage&word=${encodeURIComponent(key)}`);
-            }
+            };
 
-            // 分类筛选
             let currentFilterCate = "全部";
             const tabItems = document.querySelectorAll(".tab-item");
-            tabItems.forEach(tab=>{
-                tab.onclick = ()=>{
-                    tabItems.forEach(t=>t.classList.remove("active"));
+            tabItems.forEach(tab => {
+                tab.onclick = () => {
+                    tabItems.forEach(t => t.classList.remove("active"));
                     tab.classList.add("active");
                     currentFilterCate = tab.dataset.cate;
                     renderList();
-                }
-            })
+                };
+            });
 
-            // 本地存储key
             const STORAGE_KEY = "micang_notes_data";
             let goodsList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-            // 统计页面勾选缓存
             let selectedIds = new Set();
 
-            // 元素缓存
             const cardBox = document.getElementById('cardBox');
             const addBtn = document.getElementById('addBtn');
             const editModal = document.getElementById('editModal');
@@ -788,7 +561,6 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
             const cancelBtn = document.getElementById('cancelBtn');
             const delBtn = document.getElementById('delBtn');
 
-            // 统计页面元素
             const statListBox = document.getElementById("statListBox");
             const totalCostShow = document.getElementById("totalCostShow");
             const selectAllBtn = document.getElementById("selectAllBtn");
@@ -798,76 +570,71 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
             uploadBtn.onclick = () => fileInput.click();
             fileInput.onchange = (e) => {
                 const file = e.target.files[0];
-                if(!file) return;
+                if (!file) return;
                 fileNameText.innerText = file.name;
                 const reader = new FileReader();
                 reader.onload = ev => tempImg = ev.target.result;
                 reader.readAsDataURL(file);
-            }
+            };
 
-            // 换算总天数：1年=365天，1月=30天
-            function calcTotalDay(year, month, day){
-                return Number(year||0)*365 + Number(month||0)*30 + Number(day||0);
+            function calcTotalDay(year, month, day) {
+                return Number(year || 0) * 365 + Number(month || 0) * 30 + Number(day || 0);
             }
-            // 获取物品单日最小成本
-            function getSingleCost(item){
+            function getSingleCost(item) {
                 return (Number(item.price) / Number(item.minTotal)).toFixed(2);
             }
-            // 更新统计合计金额
-            function refreshTotalCost(){
+            function refreshTotalCost() {
                 let total = 0;
-                goodsList.forEach(item=>{
-                    if(selectedIds.has(item.id)) total += Number(getSingleCost(item));
-                })
+                goodsList.forEach(item => {
+                    if (selectedIds.has(item.id)) total += Number(getSingleCost(item));
+                });
                 totalCostShow.innerText = total.toFixed(2) + " 元/天";
             }
 
-            // 首页卡片渲染
-            function renderList(){
+            function renderList() {
                 cardBox.innerHTML = "";
                 let showList = goodsList;
-                if(currentFilterCate !== "全部"){
-                    showList = goodsList.filter(item=>item.category === currentFilterCate);
+                if (currentFilterCate !== "全部") {
+                    showList = goodsList.filter(item => item.category === currentFilterCate);
                 }
-                if(showList.length === 0){
+                if (showList.length === 0) {
                     cardBox.innerHTML = `<div class="empty-tip">暂无该分类物品，点击右上角添加物品</div>`;
                     return;
                 }
                 showList.forEach(item => {
                     const price = Number(item.price);
                     const minTotal = Number(item.minTotal);
-                    const maxTotal = Number(item.maxTotal||0);
+                    const maxTotal = Number(item.maxTotal || 0);
                     let avgText = "";
-                    if(maxTotal > 0){
+                    if (maxTotal > 0) {
                         const minAvg = (price / minTotal).toFixed(2);
                         const maxAvg = (price / maxTotal).toFixed(2);
                         avgText = `日均${minAvg}~${maxAvg}元`;
-                    }else{
+                    } else {
                         const minAvg = (price / minTotal).toFixed(2);
                         avgText = `日均${minAvg}元`;
                     }
                     const card = document.createElement('div');
                     card.className = "card";
                     card.innerHTML = `
-                        <img class="card-img" src="${item.img||''}" alt="">
+                        <img class="card-img" src="${item.img || ''}" alt="">
                         <div class="card-name">${item.name}</div>
                         <div class="card-cate">分类：${item.category}</div>
                         <div class="card-cost">${avgText}</div>
                     `;
                     card.onclick = () => openEdit(item.id);
                     cardBox.appendChild(card);
-                })
+                });
             }
 
-            // 统计页面勾选列表渲染
-            function renderStatList(){
+            function renderStatList() {
                 statListBox.innerHTML = "";
-                if(goodsList.length === 0){
+                if (goodsList.length === 0) {
                     statListBox.innerHTML = `<div class="empty-tip">暂无物品，请先去首页添加</div>`;
                     refreshTotalCost();
                     return;
                 }
-                goodsList.forEach(item=>{
+                goodsList.forEach(item => {
                     const cost = getSingleCost(item);
                     const row = document.createElement("div");
                     row.className = "stat-item-row";
@@ -879,31 +646,26 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
                         </div>
                     `;
                     statListBox.appendChild(row);
-                })
-                // 绑定勾选事件
-                document.querySelectorAll(".stat-check").forEach(ck=>{
-                    ck.onchange = ()=>{
+                });
+                document.querySelectorAll(".stat-check").forEach(ck => {
+                    ck.onchange = () => {
                         const id = ck.dataset.id;
-                        if(ck.checked) selectedIds.add(id);
-                        else selectedIds.delete(id);
+                        selectedIds[ck.checked ? 'add' : 'delete'](id);
                         refreshTotalCost();
-                    }
-                })
+                    };
+                });
                 refreshTotalCost();
             }
 
-            // 全选按钮
-            selectAllBtn.onclick = ()=>{
-                goodsList.forEach(item=>selectedIds.add(item.id));
+            selectAllBtn.onclick = () => {
+                goodsList.forEach(item => selectedIds.add(item.id));
                 renderStatList();
-            }
-            // 取消全选
-            cancelAllBtn.onclick = ()=>{
+            };
+            cancelAllBtn.onclick = () => {
                 selectedIds.clear();
                 renderStatList();
-            }
+            };
 
-            // 打开新增弹窗
             addBtn.onclick = () => {
                 modalTitle.innerText = "添加物品";
                 editId.value = "";
@@ -921,12 +683,11 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
                 tempImg = "";
                 delBtn.style.display = "none";
                 editModal.style.display = "flex";
-            }
+            };
 
-            // 打开编辑弹窗
-            function openEdit(id){
-                const item = goodsList.find(v=>v.id===id);
-                if(!item) return;
+            function openEdit(id) {
+                const item = goodsList.find(v => v.id === id);
+                if (!item) return;
                 modalTitle.innerText = "编辑物品";
                 editId.value = id;
                 nameInput.value = item.name;
@@ -938,16 +699,14 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
                 maxYear.value = item.maxYear || "";
                 maxMonth.value = item.maxMonth || "";
                 maxDay.value = item.maxDay || "";
-                tempImg = item.img||"";
+                tempImg = item.img || "";
                 fileNameText.innerText = item.img ? "已上传图片" : "未选择文件";
                 delBtn.style.display = "block";
                 editModal.style.display = "flex";
             }
 
-            // 关闭弹窗
             cancelBtn.onclick = () => editModal.style.display = "none";
 
-            // 保存物品
             saveBtn.onclick = () => {
                 const name = nameInput.value.trim();
                 const category = cateSelect.value;
@@ -961,52 +720,51 @@ l-18 -30 -127 0 c-71 0 -180 -4 -243 -9 -63 -5 -159 -11 -212 -13 l-97 -3 -31
                 const mad = Number(maxDay.value || 0);
                 const maxTotal = calcTotalDay(may, mam, mad);
 
-                if(!name || !price || minTotal <= 0){
+                if (!name || !price || minTotal <= 0) {
                     return alert("名称、总价必填，最少可用时长至少填写一项");
                 }
-                if(maxTotal > 0 && maxTotal < minTotal){
+                if (maxTotal > 0 && maxTotal < minTotal) {
                     return alert("最多可用时长不能小于最少可用时长");
                 }
 
                 const id = editId.value;
-                if(id){
-                    const idx = goodsList.findIndex(v=>v.id===id);
+                if (id) {
+                    const idx = goodsList.findIndex(v => v.id === id);
                     goodsList[idx] = {
                         ...goodsList[idx],
-                        name,category,price,
-                        minYear:my,minMonth:mm,minDay:md,minTotal,
-                        maxYear:may,maxMonth:mam,maxDay:mad,maxTotal,
+                        name, category, price,
+                        minYear: my, minMonth: mm, minDay: md, minTotal,
+                        maxYear: may, maxMonth: mam, maxDay: mad, maxTotal,
                         img: tempImg || goodsList[idx].img
-                    }
-                }else{
+                    };
+                } else {
                     const newItem = {
                         id: Date.now().toString(),
-                        name,category,price,
-                        minYear:my,minMonth:mm,minDay:md,minTotal,
-                        maxYear:may,maxMonth:mam,maxDay:mad,maxTotal,
+                        name, category, price,
+                        minYear: my, minMonth: mm, minDay: md, minTotal,
+                        maxYear: may, maxMonth: mam, maxDay: mad, maxTotal,
                         img: tempImg
-                    }
+                    };
                     goodsList.push(newItem);
                 }
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(goodsList));
                 editModal.style.display = "none";
                 renderList();
-            }
+            };
 
-            // 删除物品
             delBtn.onclick = () => {
                 const id = editId.value;
-                if(!id) return;
-                if(!confirm("确定要删除该物品吗？")) return;
-                goodsList = goodsList.filter(v=>v.id!==id);
+                if (!id) return;
+                if (!confirm("确定要删除该物品吗？")) return;
+                goodsList = goodsList.filter(v => v.id !== id);
                 selectedIds.delete(id);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(goodsList));
                 editModal.style.display = "none";
                 renderList();
-            }
+            };
 
-            // 首次加载渲染列表
-            if(hasAgreed === "true"){
+            // 首次加载渲染
+            if (hasAgreed === "true") {
                 renderList();
             }
         });
