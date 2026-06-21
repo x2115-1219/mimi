@@ -1,232 +1,203 @@
 <!--
-米仓小记 V1.4.2
-更新改动：
-1. 删除强制版权勾选弹窗，解决按钮点击失效bug
-2. 主页左上角新增i信息按钮，浮层展示版权协议+作者记事板
-3. 移除本地存储授权校验逻辑，打开直接进入主页
-4. 保留全部V1.4原有4分页、三套核算、动态分类、拍照上传、猫咪导航动画功能
-版权 ©2026 原创作者 b站@布儡是k2
+米仓小记 V1.4.0.2
+迭代更新：
+1. 支持长按删除用户自建分类，基础预设分类不可删
+2. 删除分类栏多余的“自定义”筛选标签
+3. 修复成本统计页面打不开，重写完整统计计算页面
+基底：V1.4.0.1
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>米仓小记 V1.4.2</title>
+<title>米仓小记 V1.4.0.2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif;}
-body{background:#fff9e6;padding:16px;min-height:100vh;padding-bottom:70px;}
+body{background:#fff9e6;padding:16px;padding-bottom:70px;min-height:100vh;}
 
-/* 底部导航容器 */
-.tab-nav-wrapper{position:fixed;bottom:0;left:0;width:100%;height:54px;z-index:999;pointer-events:none;}
-/* 猫咪按钮放大优化 */
-.tab-trigger{position:fixed;bottom:4px;right:10px;width:60px;height:60px;cursor:pointer;z-index:1001;pointer-events:auto !important;transition:opacity 0.24s ease;}
-.tab-trigger.hide-cat{opacity:0;pointer-events:none;}
-.tab-trigger svg{width:100%;height:100%;opacity:0.85;}
-/* 果冻弹性弹出动画 */
-.tab-nav{display:flex;justify-content:space-around;background:#fff;border-top:1px solid #e2d2b0;height:54px;width:100%;position:absolute;bottom:0;left:0;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);z-index:1000;pointer-events:auto;}
-.tab-nav.show{transform:translateY(0);}
-.nav-item{flex:1;display:flex;align-items:center;justify-content:center;color:#999;font-size:13px;cursor:pointer;flex-direction:column;gap:3px;}
-.nav-item svg{width:22px;height:22px;object-fit:contain;}
-.nav-item.active{color:#b89650;font-weight:500;}
-.page{display:none;}
-.page.active{display:block;}
+/* 搜索模块 */
+.search-icon{width:24px;height:24px;fill:#333;cursor:pointer;margin-left:auto;margin-bottom:16px;display:block;}
+.search-wrap{display:none;gap:8px;margin-bottom:16px;}
+#searchInput{flex:1;padding:10px 12px;border:1px solid #e2d2b0;border-radius:8px;background:#fff;font-size:15px;}
+#searchImgBtn{padding:0 14px;background:#b89650;color:#fff;border:none;border-radius:8px;cursor:pointer;}
 
-/* 顶部标题栏 */
-.header-bar{display:flex;align-items:center;gap:10px;border:2px solid #b89650;border-radius:99px;padding:10px 16px;margin-bottom:20px;position:relative;}
-/* 左上角i信息按钮 */
-.info-btn{width:26px;height:26px;border-radius:50%;background:#4cc477;color:#fff;border:none;font-weight:bold;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.header-title{font-size:22px;color:#333;font-weight:500;}
-.header-right{position:absolute;right:16px;display:flex;gap:16px;align-items:center;}
-.icon-refresh,.icon-box{width:24px;height:24px;cursor:pointer;}
-.search-icon{width:24px;height:24px;cursor:pointer;margin-left:auto;display:block;margin-bottom:16px;}
-
-/* 信息弹窗浮层 */
-.info-modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:99999;display:none;align-items:center;justify-content:center;padding:20px;}
-.info-box{width:100%;max-width:440px;background:#fff9e6;border-radius:16px;padding:24px;max-height:80vh;overflow-y:auto;}
-.info-box h2{text-align:center;color:#6b5427;margin-bottom:20px;font-size:24px;}
-.copyright-block{background:#fff;padding:16px;border-radius:12px;line-height:1.7;color:#333;margin-bottom:20px;}
-.note-block{background:#fff;padding:16px;border-radius:12px;line-height:1.6;color:#555;}
-.note-block h4{color:#b89650;margin-bottom:8px;font-size:16px;}
-.close-info{width:100%;margin-top:20px;padding:12px;border:none;border-radius:8px;background:#b89650;color:#fff;font-size:16px;cursor:pointer;}
-
-/* 分类标签栏 */
-.category-tab{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;}
+/* 动态分类栏 + 自定义输入区域 */
+.category-wrap{margin-bottom:16px;}
+.category-tab{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;}
 .category-tab::-webkit-scrollbar{height:3px;}
-.tab-item{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #d4c3a3;background:#fff;color:#6b5427;font-size:14px;cursor:pointer;white-space:nowrap;}
-.tab-item.active{background:#b89650;color:white;border-color:#b89650;}
+.tab-item{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #d4c3a3;background:#fff;color:#6b5427;font-size:14px;white-space:nowrap;cursor:pointer;user-select:none;}
+.tab-item.active{background:#b89650;color:#fff;border-color:#b89650;}
+/* 自定义分类输入框 */
+.custom-cate-input-wrap{display:flex;gap:8px;align-items:center;}
+#customCateInput{flex:1;padding:8px 12px;border:1px solid #d4c3a3;border-radius:20px;background:#fff;font-size:14px;outline:none;}
 
-/* 头部操作栏 */
+/* 头部操作区 */
 .main-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
 .main-header h1{font-size:26px;color:#6b5427;}
-#addBtnTime,#addBtnClock,#addBtnNormal{padding:9px 16px;background:#7d6432;color:#fff;border:none;border-radius:8px;cursor:pointer;}
+#addGoodsBtn{padding:9px 16px;background:#7d6432;color:#fff;border:none;border-radius:8px;cursor:pointer;}
 
-/* 物品卡片 */
-.container{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+/* 物品卡片容器 */
+.goods-container{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
 .empty-tip{grid-column:1/-1;text-align:center;padding:60px 20px;color:#999;font-size:15px;}
-.card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 2px 6px rgba(120,90,40,0.12);cursor:pointer;}
+.goods-card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 2px 6px rgba(120,90,40,0.12);cursor:pointer;}
 .card-img{width:100%;height:110px;object-fit:cover;border-radius:6px;background:#f3eddb;margin-bottom:10px;}
 .card-name{font-weight:500;color:#333;margin-bottom:4px;}
 .card-cate{font-size:12px;color:#b89650;margin-bottom:4px;}
 .card-cost{font-size:13px;color:#886c3b;line-height:1.4;}
 
 /* 新增/编辑弹窗 */
-.modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;padding:16px;z-index:998;}
-.modal{width:100%;max-width:420px;background:#fff;padding:22px;border-radius:12px;max-height:85vh;overflow-y:auto;}
-.modal h3{color:#6b5427;margin-bottom:18px;}
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;padding:16px;z-index:998;}
+.modal-box{width:100%;max-width:420px;background:#fff;padding:22px;border-radius:12px;max-height:85vh;overflow-y:auto;}
+.modal-box h3{color:#6b5427;margin-bottom:18px;}
 .form-item{margin-bottom:14px;}
 label{display:block;font-size:14px;margin-bottom:5px;color:#555;}
-input[type="text"],input[type="number"],select,input[type="date"]{width:100%;padding:10px;border:1px solid #e2d2b0;border-radius:7px;}
-.year-month-day-row{display:flex;gap:6px;}
-.year-month-day-row input{flex:1;}
-.upload-choice-row{display:flex;gap:8px;margin-bottom:8px;}
-.upload-choice-btn{flex:1;padding:8px;border:1px solid #d4c3a3;background:#fff;border-radius:6px;text-align:center;cursor:pointer;font-size:14px;}
-.upload-choice-btn.active{background:#b89650;color:#fff;border-color:#b89650;}
-.file-upload-wrap{display:flex;align-items:center;gap:10px;}
-.add-circle-icon{width:40px;height:40px;border:2px solid #b89650;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#b89650;font-size:20px;font-weight:bold;}
-#fileInput,#cameraInput{display:none;}
-.btns-row{display:flex;gap:10px;margin-top:22px;}
-.save-btn{flex:1;padding:11px;border:none;border-radius:7px;background:#b89650;color:white;cursor:pointer;}
+input[type="text"],input[type="number"],select{width:100%;padding:10px;border:1px solid #e2d2b0;border-radius:7px;}
+.year-month-row{display:flex;gap:6px;margin-top:6px;}
+.year-month-row input{flex:1;}
+.upload-switch{display:flex;gap:8px;margin-bottom:8px;}
+.switch-btn{flex:1;padding:8px;border:1px solid #d4c3a3;background:#fff;border-radius:6px;text-align:center;cursor:pointer;font-size:14px;}
+.switch-btn.active{background:#b89650;color:#fff;border-color:#b89650;}
+.upload-area{display:flex;align-items:center;gap:10px;}
+.upload-circle{width:40px;height:40px;border:2px solid #b89650;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#b89650;font-size:20px;font-weight:bold;cursor:pointer;}
+#fileUpload,#cameraUpload{display:none;}
+.modal-btns{display:flex;gap:10px;margin-top:22px;}
+.save-btn{flex:1;padding:11px;border:none;border-radius:7px;background:#b89650;color:#fff;cursor:pointer;}
 .cancel-btn{flex:1;padding:11px;border:1px solid #d4c3a3;background:#fff;border-radius:7px;cursor:pointer;}
-.del-btn{width:100%;margin-top:10px;padding:11px;background:#c45141;color:white;border:none;border-radius:7px;cursor:pointer;}
-.batch-record-row{display:flex;gap:8px;margin-top:6px;}
-.batch-record-row input{flex:1;}
-.batch-record-row button{padding:0 10px;background:#b89650;color:#fff;border:none;border-radius:6px;cursor:pointer;}
+.del-goods-btn{width:100%;margin-top:10px;padding:11px;background:#c45141;color:#fff;border:none;border-radius:7px;cursor:pointer;display:none;}
 
-/* 统计页面 */
-.stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+/* 统计页面样式 */
+.stat-page{display:none;}
+.stat-header{margin-bottom:16px;}
 .stat-filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.filter-tag{padding:6px 12px;border:1px solid #d4c3a3;border-radius:16px;font-size:13px;cursor:pointer;}
-.filter-tag.active{background:#b89650;color:#fff;border-color:#b89650;}
+.stat-filter-tag{padding:6px 12px;border:1px solid #d4c3a3;border-radius:16px;font-size:13px;cursor:pointer;}
+.stat-filter-tag.active{background:#b89650;color:#fff;border-color:#b89650;}
 .stat-total-box{background:#fff;padding:14px;border-radius:10px;margin-bottom:16px;}
 .stat-total-text{font-size:16px;color:#6b5427;}
 .stat-total-num{font-size:22px;font-weight:bold;color:#b89650;margin-top:6px;}
-.select-all-bar{display:flex;gap:10px;margin-bottom:12px;}
-.select-btn{padding:7px 14px;background:#fff;border:1px solid #d4c3a3;border-radius:6px;color:#6b5427;cursor:pointer;}
+.stat-select-bar{display:flex;gap:10px;margin-bottom:12px;}
+.stat-select-btn{padding:7px 14px;background:#fff;border:1px solid #d4c3a3;border-radius:6px;color:#6b5427;cursor:pointer;}
 .stat-item-list{display:flex;flex-direction:column;gap:8px;}
 .stat-item-row{display:flex;align-items:center;gap:10px;background:#fff;padding:12px;border-radius:8px;}
 .stat-item-info{flex:1;}
-.stat-name{font-weight:500;color:#333;}
-.stat-cate-cost{font-size:13px;color:#886c3b;margin-top:3px;}
+.stat-item-name{font-weight:500;color:#333;}
+.stat-item-cate{font-size:13px;color:#886c3b;margin-top:3px;}
 
-/* 三种模式输入框显隐控制 */
-.mode-item{display:none;}
-.mode-item.show{display:block;margin-top:8px;}
+/* 底部导航容器 + 右下角猫咪悬浮按钮 */
+.tab-nav-wrapper{position:fixed;bottom:0;left:0;width:100%;height:54px;z-index:999;pointer-events:none;}
+.tab-trigger{position:fixed;bottom:4px;right:10px;width:60px;height:60px;cursor:pointer;z-index:1001;pointer-events:auto;transition:opacity 0.24s ease;}
+.tab-trigger.hide-cat{opacity:0;pointer-events:none;}
+.tab-trigger svg{width:100%;height:100%;opacity:0.85;}
+.tab-nav{display:flex;justify-content:space-around;background:#fff;border-top:1px solid #e2d2b0;height:54px;width:100%;position:absolute;bottom:0;left:0;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);pointer-events:auto;}
+.tab-nav.show-nav{transform:translateY(0);}
+.nav-item{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#999;font-size:13px;gap:3px;cursor:pointer;}
+.nav-item.active{color:#b89650;font-weight:500;}
+.nav-item svg{width:22px;height:22px;fill:currentColor;}
 </style>
 </head>
 <body>
-<!-- 作者信息/版权弹窗（替代原强制勾选页） -->
-<div class="info-modal" id="infoModal">
-<div class="info-box">
-<h2>米仓小记 · 作者声明</h2>
-<div class="copyright-block">
-<p>©2026 米仓小记 原创作者 b站@布儡是k2，保留全部计算机软件著作权</p>
-<p>1. 本软件为原创工具，未经书面授权禁止破解、倒卖、篡改源码；</p>
-<p>2. 禁止提取界面、逻辑、功能制作同类盈利产品；</p>
-<p>3. 盗版商用传播均构成侵权，作者可追究法律责任；</p>
+<!-- 搜索模块 -->
+<svg class="search-icon" id="searchToggle" viewBox="0 0 24 24">
+<path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+</svg>
+<div class="search-wrap" id="searchBox">
+<input type="text" id="searchInput" placeholder="输入物品名称跳转百度搜图">
+<button id="searchImgBtn">搜图</button>
 </div>
-<div class="note-block">
-<h4>作者记事板</h4>
-<p>这里是作者想对大家说的话、版本更新公告、使用小提示，后续会持续补充~</p>
-</div>
-<button class="close-info" id="closeInfoBtn">关闭</button>
+
+<!-- 分类区域（含自定义输入框，移除常驻自定义标签） -->
+<div class="category-wrap">
+<div class="category-tab" id="cateTab"></div>
+<div class="custom-cate-input-wrap">
+<input type="text" id="customCateInput" placeholder="输入自定义分类名称，回车添加">
 </div>
 </div>
 
-<!-- 3.通用台账页面（默认激活，兼容旧数据） -->
-<div class="page active" id="normalPage">
-<div class="header-bar">
-<button class="info-btn" id="infoOpenBtn">i</button>
-<div class="header-title">米仓小记</div>
-<div class="header-right">
-<svg class="icon-refresh" viewBox="0 0 24 24" fill="#333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-<svg class="icon-box" viewBox="0 0 24 24" fill="#333"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z M6 10h12v2H6z"/></svg>
-</div>
-</div>
-<svg class="search-icon" viewBox="0 0 24 24" fill="#333"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-<div class="category-tab" id="cateTabNormal">
-<div class="tab-item active" data-cate="全部">全部</div>
-<div class="tab-item" data-cate="数码">数码</div>
-<div class="tab-item" data-cate="化妆品">化妆品</div>
-<div class="tab-item" data-cate="日用">日用</div>
-<div class="tab-item" data-cate="其他">其他</div>
-</div>
+<!-- 台账页面 -->
+<div class="goods-page page active" id="goodsPage">
 <div class="main-header">
 <h1>米仓小记</h1>
-<button id="addBtnNormal">添加物品</button>
+<button id="addGoodsBtn">添加物品</button>
 </div>
-<div class="container" id="cardBoxNormal"></div>
-</div>
-
-<!-- 1.时段台账页面 -->
-<div class="page" id="timePage">
-<div class="header-bar">
-<button class="info-btn" id="infoOpenBtn2">i</button>
-<div class="header-title">米仓小记</div>
-<div class="header-right">
-<svg class="icon-refresh" viewBox="0 0 24 24" fill="#333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-<svg class="icon-box" viewBox="0 0 24 24" fill="#333"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z M6 10h12v2H6z"/></svg>
-</div>
-</div>
-<svg class="search-icon" viewBox="0 0 24 24" fill="#333"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-<div class="category-tab" id="cateTabTime"></div>
-<div class="main-header">
-<h1>时段台账</h1>
-<button id="addBtnTime">添加物品</button>
-</div>
-<div class="container" id="cardBoxTime"></div>
+<div class="goods-container" id="goodsBox"></div>
 </div>
 
-<!-- 2.打卡台账页面 -->
-<div class="page" id="clockPage">
-<div class="header-bar">
-<button class="info-btn" id="infoOpenBtn3">i</button>
-<div class="header-title">米仓小记</div>
-<div class="header-right">
-<svg class="icon-refresh" viewBox="0 0 24 24" fill="#333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-<svg class="icon-box" viewBox="0 0 24 24" fill="#333"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z M6 10h12v2H6z"/></svg>
-</div>
-</div>
-<svg class="search-icon" viewBox="0 0 24 24" fill="#333"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-<div class="category-tab" id="cateTabClock"></div>
-<div class="main-header">
-<h1>打卡台账</h1>
-<button id="addBtnClock">添加物品</button>
-</div>
-<div class="container" id="cardBoxClock"></div>
-</div>
-
-<!-- 4.汇总统计页面 -->
-<div class="page" id="statPage">
-<div class="header-bar">
-<button class="info-btn" id="infoOpenBtn4">i</button>
-<div class="header-title">米仓小记</div>
-<div class="header-right">
-<svg class="icon-refresh" viewBox="0 0 24 24" fill="#333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-<svg class="icon-box" viewBox="0 0 24 24" fill="#333"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z M6 10h12v2H6z"/></svg>
-</div>
-</div>
+<!-- 成本统计页面（修复完整可渲染） -->
+<div class="stat-page page" id="statPage">
 <div class="stat-header">
-<h1>汇总统计</h1>
+<h1>成本统计</h1>
 </div>
 <div class="stat-filter-bar">
-<div class="filter-tag active" data-filter="all">全部模式</div>
-<div class="filter-tag" data-filter="time">时段台账</div>
-<div class="filter-tag" data-filter="clock">打卡台账</div>
-<div class="filter-tag" data-filter="normal">通用台账</div>
+<div class="stat-filter-tag active" data-filter="all">全部分类</div>
 </div>
 <div class="stat-total-box">
-<div class="stat-total-text">勾选物品合计损耗成本</div>
+<div class="stat-total-text">选中物品平均损耗成本</div>
 <div class="stat-total-num" id="totalCostShow">0.00 元</div>
 </div>
-<div class="select-all-bar">
-<button class="select-btn" id="selectAllBtn">全选</button>
-<button class="select-btn" id="cancelAllBtn">取消全选</button>
+<div class="stat-select-bar">
+<button class="stat-select-btn" id="selectAllBtn">全选</button>
+<button class="stat-select-btn" id="cancelAllBtn">取消全选</button>
 </div>
 <div class="stat-item-list" id="statListBox"></div>
 </div>
 
-<!-- 底部导航栏容器+猫咪按钮 -->
+<!-- 新增/编辑物品弹窗 -->
+<div class="modal-mask" id="editModal">
+<div class="modal-box">
+<h3 id="modalTitle">添加物品</h3>
+<input type="hidden" id="editId">
+<div class="form-item">
+<label>物品名称</label>
+<input type="text" id="nameInput" placeholder="填写物品名称">
+</div>
+<div class="form-item">
+<label>物品分类</label>
+<select id="cateSelect">
+<!-- 动态渲染全部预设+用户自定义分类 -->
+</select>
+</div>
+<div class="form-item">
+<label>物品图片</label>
+<div class="upload-switch">
+<div class="switch-btn active" data-type="album">相册上传</div>
+<div class="switch-btn" data-type="camera">立即拍照</div>
+</div>
+<div class="upload-area">
+<div class="upload-circle" id="uploadTrigger">+</div>
+<span id="fileTip">未选择图片</span>
+<input type="file" id="fileUpload" accept="image/*">
+<input type="file" id="cameraUpload" accept="image/*" capture="environment">
+</div>
+</div>
+<div class="form-item">
+<label>购入总价（元）</label>
+<input type="number" step="0.01" id="priceInput" placeholder="0.00">
+</div>
+<div class="form-item">
+<label>预估最少可用时长</label>
+<div class="year-month-row">
+<input type="number" id="minYear" placeholder="年" min="0">
+<input type="number" id="minMonth" placeholder="月" min="0">
+<input type="number" id="minDay" placeholder="天" min="0">
+</div>
+</div>
+<div class="form-item">
+<label>预估最多可用时长（选填）</label>
+<div class="year-month-row">
+<input type="number" id="maxYear" placeholder="年" min="0">
+<input type="number" id="maxMonth" placeholder="月" min="0">
+<input type="number" id="maxDay" placeholder="天" min="0">
+</div>
+</div>
+<div class="modal-btns">
+<button class="save-btn" id="saveBtn">保存</button>
+<button class="cancel-btn" id="cancelBtn">取消</button>
+</div>
+<button class="del-goods-btn" id="delBtn">删除该物品</button>
+</div>
+</div>
+
+<!-- 底部导航+右下角猫咪悬浮按钮 -->
 <div class="tab-nav-wrapper">
 <div class="tab-trigger" id="tabTrigger">
 <?xml version="1.0" standalone="no"?>
@@ -245,618 +216,384 @@ input[type="text"],input[type="number"],select,input[type="date"]{width:100%;pad
 </svg>
 </div>
 <div class="tab-nav" id="tabNav">
-<div class="nav-item" data-page="timePage">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-<span>时段台账</span>
-</div>
-<div class="nav-item" data-page="clockPage">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-<span>打卡台账</span>
-</div>
-<div class="nav-item active" data-page="normalPage">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-<span>通用台账</span>
+<div class="nav-item active" data-page="goodsPage">
+<svg viewBox="0 0 24 24">
+<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+</svg>
+<span>物品台账</span>
 </div>
 <div class="nav-item" data-page="statPage">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-<span>汇总统计</span>
+<svg viewBox="0 0 24 24">
+<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+</svg>
+<span>成本统计</span>
 </div>
-</div>
-</div>
-
-<!-- 新增/编辑物品弹窗 -->
-<div class="modal-wrap" id="editModal">
-<div class="modal">
-<h3 id="modalTitle">添加物品</h3>
-<input type="hidden" id="editId">
-<input type="hidden" id="bindMode">
-<div class="form-item">
-<label>物品名称</label>
-<input type="text" id="nameInput" placeholder="输入物品名称">
-</div>
-<div class="form-item">
-<label>物品分类</label>
-<select id="cateSelect">
-<option value="数码">数码</option>
-<option value="化妆品">化妆品</option>
-<option value="日用">日用</option>
-<option value="其他">其他</option>
-</select>
-</div>
-<div class="form-item">
-<label>物品图片</label>
-<div class="upload-choice-row">
-<div class="upload-choice-btn active" data-type="album">相册上传</div>
-<div class="upload-choice-btn" data-type="camera">立即拍照</div>
-</div>
-<div class="file-upload-wrap">
-<div class="add-circle-icon" id="uploadBtn">+</div>
-<span id="fileNameText">未选择文件</span>
-<input type="file" id="fileInput" accept="image/*">
-<input type="file" id="cameraInput" accept="image/*" capture="environment">
-</div>
-</div>
-<div class="form-item">
-<label>购入总价</label>
-<input type="number" step="0.01" id="priceInput" placeholder="0.00">
-</div>
-
-<!-- 通用台账输入区 -->
-<div class="mode-item" id="modeNormal">
-<label>最少可用时长（必填）</label>
-<div class="year-month-day-row">
-<input type="number" id="minYear" placeholder="年" min="0">
-<input type="number" id="minMonth" placeholder="月" min="0">
-<input type="number" id="minDay" placeholder="天" min="0">
-</div>
-<label style="margin-top:8px;">最多可用时长（选填）</label>
-<div class="year-month-day-row">
-<input type="number" id="maxYear" placeholder="年" min="0">
-<input type="number" id="maxMonth" placeholder="月" min="0">
-<input type="number" id="maxDay" placeholder="天" min="0">
-</div>
-</div>
-
-<!-- 时段台账输入区 -->
-<div class="mode-item" id="modeTime">
-<label>使用起始日期</label>
-<input type="date" id="startDate">
-<label style="margin-top:8px;">预估最少可用时长</label>
-<div class="year-month-day-row">
-<input type="number" id="tMinYear" placeholder="年" min="0">
-<input type="number" id="tMinMonth" placeholder="月" min="0">
-<input type="number" id="tMinDay" placeholder="天" min="0">
-</div>
-<label style="margin-top:8px;">预估最多可用时长（选填）</label>
-<div class="year-month-day-row">
-<input type="number" id="tMaxYear" placeholder="年" min="0">
-<input type="number" id="tMaxMonth" placeholder="月" min="0">
-<input type="number" id="tMaxDay" placeholder="天" min="0">
-</div>
-</div>
-
-<!-- 打卡台账输入区 -->
-<div class="mode-item" id="modeClock">
-<label>预估总使用次数（参考区间）</label>
-<input type="number" id="totalEstCount" placeholder="填写预估总次数" min="0">
-<label style="margin-top:8px;">批量补录使用次数</label>
-<div class="batch-record-row">
-<input type="number" id="batchCount" placeholder="本次次数" min="1" value="1">
-<button id="addBatchBtn">添加记录</button>
-</div>
-<div style="margin-top:6px;font-size:13px;color:#666;">累计打卡次数：<span id="currentClockCount">0</span></div>
-</div>
-
-<div class="btns-row">
-<button class="save-btn" id="saveBtn">保存</button>
-<button class="cancel-btn" id="cancelBtn">取消</button>
-</div>
-<button class="del-btn" id="delBtn" style="display:none;">删除该物品</button>
 </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-const STORAGE_KEY = "micang_notes_v14_data";
-const PRE_CATE_LIST = ["数码","化妆品","日用","其他"];
-let goodsList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-let selectedIds = new Set();
-let currentStatFilter = "all";
-let hideTimer = null;
-let tempImg = "";
+document.addEventListener('DOMContentLoaded', () => {
+const STORAGE_KEY = "micang_v13_data";
+const CATE_STORAGE_KEY = "micang_custom_cates";
+// 预设基础分类（不可删除）
+const BASE_CATE_LIST = ["数码","美妆","电器","文具","百货","医药","服装","鞋包","饰品","车","家具"];
+let userCustomCates = JSON.parse(localStorage.getItem(CATE_STORAGE_KEY)) || [];
+let goodsArr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+let tempImgData = "";
 let uploadMode = "album";
+let selectedStatIds = new Set();
 
-// ====================== 作者信息弹窗逻辑（替代原强制版权勾选页） ======================
-const infoModal = document.getElementById("infoModal");
-const closeInfoBtn = document.getElementById("closeInfoBtn");
-// 全部页面的i打开按钮
-const infoOpenBtns = document.querySelectorAll("#infoOpenBtn,#infoOpenBtn2,#infoOpenBtn3,#infoOpenBtn4");
-infoOpenBtns.forEach(btn=>{
-btn.addEventListener("click",()=>{
-infoModal.style.display = "flex";
-})
-})
-// 关闭弹窗
-closeInfoBtn.addEventListener("click",()=>{
-infoModal.style.display = "none";
-})
-// 点击浮层空白关闭
-infoModal.addEventListener("click",function(e){
-if(e.target === infoModal){
-infoModal.style.display = "none";
-}
-})
-
-// ====================== 底部猫咪导航 果冻动画+显隐联动 ======================
-const tabNav = document.getElementById("tabNav");
-const tabTrigger = document.getElementById("tabTrigger");
-function showNav(){
-tabNav.classList.add("show");
-tabTrigger.classList.add("hide-cat");
-resetHideTimer();
-}
-function hideNav(){
-tabNav.classList.remove("show");
-tabTrigger.classList.remove("hide-cat");
-}
-function resetHideTimer(){
-clearTimeout(hideTimer);
-hideTimer = setTimeout(hideNav,2000);
-}
-tabTrigger.addEventListener("click", showNav);
-tabTrigger.addEventListener("touchstart", showNav);
-// 全局点击计时器：点击信息弹窗内部不重置导航计时
-document.body.addEventListener("click", function(e){
-if(!infoModal.contains(e.target)){
-resetHideTimer();
-}
+// 搜索开关逻辑
+const searchToggle = document.getElementById("searchToggle");
+const searchBox = document.getElementById("searchBox");
+searchToggle.addEventListener("click", () => {
+searchBox.style.display = searchBox.style.display === "flex" ? "none" : "flex";
 });
-document.body.addEventListener("touchstart", function(e){
-if(!infoModal.contains(e.target)){
-resetHideTimer();
+document.getElementById("searchImgBtn").addEventListener("click", () => {
+const key = document.getElementById("searchInput").value.trim();
+if(!key) return alert("请输入物品名称");
+window.open(`https://image.baidu.com/search/index?tn=baiduimage&word=${encodeURIComponent(key)}`);
+});
+
+// 自定义分类输入回车新增
+const customCateInput = document.getElementById("customCateInput");
+customCateInput.addEventListener("keydown", (e) => {
+if(e.key === "Enter"){
+const inputVal = e.target.value.trim();
+if(!inputVal) return;
+const allCates = [...BASE_CATE_LIST, ...userCustomCates];
+if(allCates.includes(inputVal)){
+alert("该分类已存在");
+return;
+}
+userCustomCates.push(inputVal);
+localStorage.setItem(CATE_STORAGE_KEY, JSON.stringify(userCustomCates));
+customCateInput.value = "";
+renderCateTab();
+renderCateSelect();
 }
 });
 
-// ====================== 底部4分页切换逻辑 ======================
-const navItems = document.querySelectorAll(".nav-item");
-const pages = document.querySelectorAll(".page");
-navItems.forEach(item=>{
-item.addEventListener("click",function(){
-const targetPageId = this.dataset.page;
-navItems.forEach(n=>n.classList.remove("active"));
-this.classList.add("active");
-pages.forEach(p=>p.classList.remove("active"));
-document.getElementById(targetPageId).classList.add("active");
-if(targetPageId === "statPage") renderStatList();
-});
-});
-
-// ====================== 通用工具函数 ======================
-// 年月日换算总天数
-function calcDay(y,m,d){
-return (Number(y)||0)*365 + (Number(m)||0)*30 + (Number(d)||0);
-}
-// 打卡单次成本计算
-function calcClockAvg(item){
-if(!item.clockTotal || Number(item.clockTotal) <= 0) return "暂无打卡";
-return (Number(item.price) / Number(item.clockTotal)).toFixed(2);
-}
-// 时段真实使用天数（起始日到今日）
-function calcRealStartDays(startDate){
-if(!startDate) return 0;
-const start = new Date(startDate);
-const now = new Date();
-const diffDay = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-return diffDay > 0 ? diffDay : 0;
+// 全部分类集合
+function getAllCateList(){
+return [...BASE_CATE_LIST, ...userCustomCates];
 }
 
-// ====================== 分类动态排序渲染 ======================
-function getSortedCategoryList(mode){
-const pageGoods = goodsList.filter(g=>g.mode === mode);
+// 渲染分类标签栏（移除常驻自定义按钮，新增长按删除逻辑）
+function renderCateTab(){
+const tabWrap = document.getElementById("cateTab");
+tabWrap.innerHTML = "";
+const allCates = getAllCateList();
 const countMap = {};
-PRE_CATE_LIST.forEach(c=>countMap[c] = 0);
-pageGoods.forEach(g=>countMap[g.category]++);
-let sortedCates = [...PRE_CATE_LIST].sort((a,b)=>countMap[b] - countMap[a]);
-return ["全部", ...sortedCates];
-}
-function renderCategoryTab(tabContainerId, mode){
-const box = document.getElementById(tabContainerId);
-box.innerHTML = "";
-const cateList = getSortedCategoryList(mode);
-cateList.forEach(cate=>{
+allCates.forEach(c => countMap[c] = 0);
+goodsArr.forEach(item => countMap[item.category]++);
+const sortedCates = ["全部", ...allCates.sort((a,b)=>countMap[b]-countMap[a])];
+sortedCates.forEach(cate => {
 const div = document.createElement("div");
 div.className = "tab-item" + (cate === "全部" ? " active" : "");
 div.dataset.cate = cate;
 div.innerText = cate;
-div.addEventListener("click", function(){
-document.querySelectorAll(`#${tabContainerId} .tab-item`).forEach(t=>t.classList.remove("active"));
-this.classList.add("active");
-renderSinglePage(mode);
+// 点击切换分类
+div.addEventListener("click", () => {
+document.querySelectorAll(".tab-item").forEach(t => t.classList.remove("active"));
+div.classList.add("active");
+renderGoodsList();
 });
-box.appendChild(div);
+// 长按删除自定义分类（基础分类禁止删除）
+let longPressTimer = null;
+div.addEventListener("mousedown", ()=>{
+longPressTimer = setTimeout(()=>{
+if(BASE_CATE_LIST.includes(cate)){
+alert("基础预设分类不可删除");
+return;
+}
+if(confirm(`确定删除分类「${cate}」？该分类下物品不会被删除，仅移除分类标签`)){
+userCustomCates = userCustomCates.filter(c=>c!==cate);
+localStorage.setItem(CATE_STORAGE_KEY, JSON.stringify(userCustomCates));
+renderCateTab();
+renderCateSelect();
+}
+}, 800);
+});
+div.addEventListener("mouseup", ()=>clearTimeout(longPressTimer));
+div.addEventListener("mouseleave", ()=>clearTimeout(longPressTimer));
+// 移动端触摸长按
+div.addEventListener("touchstart", ()=>{
+longPressTimer = setTimeout(()=>{
+if(BASE_CATE_LIST.includes(cate)){
+alert("基础预设分类不可删除");
+return;
+}
+if(confirm(`确定删除分类「${cate}」？该分类下物品不会被删除，仅移除分类标签`)){
+userCustomCates = userCustomCates.filter(c=>c!==cate);
+localStorage.setItem(CATE_STORAGE_KEY, JSON.stringify(userCustomCates));
+renderCateTab();
+renderCateSelect();
+}
+}, 800);
+});
+div.addEventListener("touchend", ()=>clearTimeout(longPressTimer));
+div.addEventListener("touchcancel", ()=>clearTimeout(longPressTimer));
+tabWrap.appendChild(div);
 });
 }
 
-// ====================== 单台账页面渲染 ======================
-function renderSinglePage(mode){
-let pageId, cardBoxId, cateTabId;
-if(mode === "time"){
-pageId = "timePage";
-cardBoxId = "cardBoxTime";
-cateTabId = "cateTabTime";
-}else if(mode === "clock"){
-pageId = "clockPage";
-cardBoxId = "cardBoxClock";
-cateTabId = "cateTabClock";
-}else{
-pageId = "normalPage";
-cardBoxId = "cardBoxNormal";
-cateTabId = "cateTabNormal";
+// 弹窗下拉分类
+function renderCateSelect(){
+const cateSelect = document.getElementById("cateSelect");
+cateSelect.innerHTML = "";
+getAllCateList().forEach(cate => {
+const opt = document.createElement("option");
+opt.value = cate;
+opt.innerText = cate;
+cateSelect.appendChild(opt);
+});
 }
-renderCategoryTab(cateTabId, mode);
-const pageDom = document.getElementById(pageId);
-const activeCate = pageDom.querySelector(`#${cateTabId} .tab-item.active`)?.dataset.cate || "全部";
-let renderList = goodsList.filter(g=>g.mode === mode);
-if(activeCate !== "全部") renderList = renderList.filter(g=>g.category === activeCate);
-const cardBox = document.getElementById(cardBoxId);
-cardBox.innerHTML = "";
+
+// 计算总天数
+function calcTotalDay(y,m,d){
+return (Number(y)||0)*365 + (Number(m)||0)*30 + (Number(d)||0);
+}
+
+// 渲染台账物品列表
+function renderGoodsList(){
+switchPage("goodsPage");
+const box = document.getElementById("goodsBox");
+box.innerHTML = "";
+const activeCate = document.querySelector(".tab-item.active").dataset.cate;
+let renderList = goodsArr;
+if(activeCate !== "全部"){
+renderList = goodsArr.filter(i => i.category === activeCate);
+}
 if(renderList.length === 0){
-cardBox.innerHTML = `<div class="empty-tip">暂无物品，点击右上角添加</div>`;
+box.innerHTML = `<div class="empty-tip">暂无物品，点击右上角添加物品</div>`;
 return;
 }
-renderList.forEach(item=>{
-let costText = "";
-if(mode === "normal"){
-const minTotalDay = calcDay(item.minYear, item.minMonth, item.minDay);
-const minAvg = (item.price / minTotalDay).toFixed(2);
-const maxTotalDay = calcDay(item.maxYear, item.maxMonth, item.maxDay);
-if(maxTotalDay > 0){
-const maxAvg = (item.price / maxTotalDay).toFixed(2);
+renderList.forEach(item => {
+const minDay = calcTotalDay(item.minYear, item.minMonth, item.minDay);
+const minAvg = minDay > 0 ? (Number(item.price)/minDay).toFixed(2) : "时长未填";
+const maxDay = calcTotalDay(item.maxYear, item.maxMonth, item.maxDay);
+let costText = `日均最低 ${minAvg} 元`;
+if(maxDay > 0){
+const maxAvg = (Number(item.price)/maxDay).toFixed(2);
 costText = `日均 ${minAvg} ~ ${maxAvg} 元`;
-}else{
-costText = `日均 ${minAvg} 元`;
-}
-}else if(mode === "time"){
-const realUseDay = calcRealStartDays(item.startDate);
-const realAvg = realUseDay > 0 ? (item.price / realUseDay).toFixed(2) : "无使用记录";
-const minTotalDay = calcDay(item.tMinYear, item.tMinMonth, item.tMinDay);
-const minAvg = (item.price / minTotalDay).toFixed(2);
-const maxTotalDay = calcDay(item.tMaxYear, item.tMaxMonth, item.tMaxDay);
-if(maxTotalDay > 0){
-const maxAvg = (item.price / maxTotalDay).toFixed(2);
-costText = `实际日均${realAvg} | 预估${minAvg}~${maxAvg}元`;
-}else{
-costText = `实际日均${realAvg} | 预估${minAvg}元`;
-}
-}else if(mode === "clock"){
-const singleAvg = calcClockAvg(item);
-const estTotal = Number(item.totalEstCount) || 0;
-if(estTotal > 0){
-const estSingleAvg = (item.price / estTotal).toFixed(2);
-costText = `单次${singleAvg} | 预估单次${estSingleAvg}元`;
-}else{
-costText = `单次${singleAvg}`;
-}
 }
 const card = document.createElement("div");
-card.className = "card";
+card.className = "goods-card";
 card.innerHTML = `
 <img class="card-img" src="${item.img||''}" alt="">
 <div class="card-name">${item.name}</div>
 <div class="card-cate">${item.category}</div>
 <div class="card-cost">${costText}</div>
 `;
-card.addEventListener("click",()=>openEditModal(item.id));
-cardBox.appendChild(card);
-}
+card.addEventListener("click", () => openEditModal(item.id));
+box.appendChild(card);
+});
 }
 
-// ====================== 统计页面渲染 ======================
-function renderStatList(){
-const filter = currentStatFilter;
-let list = goodsList;
-if(filter !== "all") list = goodsList.filter(g=>g.mode === filter);
-const statBox = document.getElementById("statListBox");
-statBox.innerHTML = "";
-list.forEach(item=>{
+// 切换页面
+function switchPage(pageId){
+document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+document.getElementById(pageId).style.display="block";
+}
+
+// 渲染统计页面（修复可用）
+function renderStatPage(){
+switchPage("statPage");
+selectedStatIds.clear();
+const listBox = document.getElementById("statListBox");
+listBox.innerHTML = "";
+goodsArr.forEach(item=>{
 const row = document.createElement("div");
 row.className = "stat-item-row";
 row.dataset.id = item.id;
 row.innerHTML = `
 <input type="checkbox" class="stat-check">
 <div class="stat-item-info">
-<div class="stat-name">${item.name}</div>
-<div class="stat-cate-cost">分类：${item.category}</div>
+<div class="stat-item-name">${item.name}</div>
+<div class="stat-item-cate">分类：${item.category}</div>
 </div>
 `;
 const check = row.querySelector(".stat-check");
-if(selectedIds.has(item.id)) check.checked = true;
-check.addEventListener("change",function(){
-if(this.checked) selectedIds.add(item.id);
-else selectedIds.delete(item.id);
-calcTotalCost();
-})
-statBox.appendChild(row);
-})
-calcTotalCost();
+check.addEventListener("change", ()=>{
+if(check.checked) selectedStatIds.add(item.id);
+else selectedStatIds.delete(item.id);
+calcStatTotal();
+});
+listBox.appendChild(row);
+});
+calcStatTotal();
 }
-function calcTotalCost(){
-let total = 0;
-selectedIds.forEach(id=>{
-const item = goodsList.find(g=>g.id === id);
+// 统计合计计算
+function calcStatTotal(){
+let totalAvg = 0;
+selectedStatIds.forEach(id=>{
+const item = goodsArr.find(g=>g.id===id);
 if(!item) return;
-if(item.mode === "normal"){
-const d = calcDay(item.minYear,item.minMonth,item.minDay);
-total += Number(item.price)/d;
-}else if(item.mode === "time"){
-const d = calcRealStartDays(item.startDate);
-if(d>0) total += Number(item.price)/d;
-}else if(item.mode === "clock"){
-if(item.clockTotal>0) total += Number(item.price)/item.clockTotal;
+const day = calcTotalDay(item.minYear,item.minMonth,item.minDay);
+if(day>0) totalAvg += Number(item.price)/day;
+});
+document.getElementById("totalCostShow").innerText = totalAvg.toFixed(2)+" 元";
 }
-})
-document.getElementById("totalCostShow").innerText = total.toFixed(2) + " 元";
-}
-// 统计筛选切换
-const statFilters = document.querySelectorAll(".filter-tag");
-statFilters.forEach(f=>{
-f.addEventListener("click",function(){
-statFilters.forEach(x=>x.classList.remove("active"));
-this.classList.add("active");
-currentStatFilter = this.dataset.filter;
-renderStatList();
-})
-})
+// 全选/取消全选统计
 document.getElementById("selectAllBtn").addEventListener("click",()=>{
-const list = currentStatFilter==="all"?goodsList:goodsList.filter(g=>g.mode===currentStatFilter);
-list.forEach(i=>selectedIds.add(i.id));
-renderStatList();
-})
+goodsArr.forEach(i=>selectedStatIds.add(i.id));
+renderStatPage();
+});
 document.getElementById("cancelAllBtn").addEventListener("click",()=>{
-selectedIds.clear();
-renderStatList();
-})
+selectedStatIds.clear();
+renderStatPage();
+});
 
-// ====================== 物品增删改弹窗逻辑 ======================
+// 物品弹窗逻辑
 const editModal = document.getElementById("editModal");
-const saveBtn = document.getElementById("saveBtn");
-const cancelBtn = document.getElementById("cancelBtn");
-const delBtn = document.getElementById("delBtn");
+const modalTitle = document.getElementById("modalTitle");
+const editId = document.getElementById("editId");
 const nameInput = document.getElementById("nameInput");
-const priceInput = document.getElementById("priceInput");
 const cateSelect = document.getElementById("cateSelect");
-const uploadBtns = document.querySelectorAll(".upload-choice-btn");
-const fileInput = document.getElementById("fileInput");
-const cameraInput = document.getElementById("cameraInput");
-const uploadBtn = document.getElementById("uploadBtn");
-const fileNameText = document.getElementById("fileNameText");
-// 三种模式输入框
-const modeNormal = document.getElementById("modeNormal");
-const modeTime = document.getElementById("modeTime");
-const modeClock = document.getElementById("modeClock");
-// 通用台账输入
+const priceInput = document.getElementById("priceInput");
 const minYear = document.getElementById("minYear");
 const minMonth = document.getElementById("minMonth");
 const minDay = document.getElementById("minDay");
 const maxYear = document.getElementById("maxYear");
 const maxMonth = document.getElementById("maxMonth");
 const maxDay = document.getElementById("maxDay");
-// 时段台账输入
-const startDate = document.getElementById("startDate");
-const tMinYear = document.getElementById("tMinYear");
-const tMinMonth = document.getElementById("tMinMonth");
-const tMinDay = document.getElementById("tMinDay");
-const tMaxYear = document.getElementById("tMaxYear");
-const tMaxMonth = document.getElementById("tMaxMonth");
-const tMaxDay = document.getElementById("tMaxDay");
-// 打卡台账输入
-const totalEstCount = document.getElementById("totalEstCount");
-const batchCount = document.getElementById("batchCount");
-const addBatchBtn = document.getElementById("addBatchBtn");
-const currentClockCount = document.getElementById("currentClockCount");
-let tempClockNum = 0;
-let editTargetId = null;
-let currentBindMode = "normal";
+const fileTip = document.getElementById("fileTip");
+const uploadTrigger = document.getElementById("uploadTrigger");
+const fileUpload = document.getElementById("fileUpload");
+const cameraUpload = document.getElementById("cameraUpload");
+const delBtn = document.getElementById("delBtn");
+const saveBtn = document.getElementById("saveBtn");
+const cancelBtn = document.getElementById("cancelBtn");
+const switchBtns = document.querySelectorAll(".switch-btn");
 
-// 添加物品按钮绑定
-document.getElementById("addBtnNormal").addEventListener("click",()=>openAddModal("normal"));
-document.getElementById("addBtnTime").addEventListener("click",()=>openAddModal("time"));
-document.getElementById("addBtnClock").addEventListener("click",()=>openAddModal("clock"));
+switchBtns.forEach(btn => {
+btn.addEventListener("click", () => {
+switchBtns.forEach(b => b.classList.remove("active"));
+btn.classList.add("active");
+uploadMode = btn.dataset.type;
+});
+});
+uploadTrigger.addEventListener("click", () => uploadMode === "album" ? fileUpload.click() : cameraUpload.click());
+fileUpload.addEventListener("change", e => {
+const f = e.target.files[0];
+if(!f) return;
+const reader = new FileReader();
+reader.onload = ev => { tempImgData = ev.target.result; fileTip.innerText = f.name; };
+reader.readAsDataURL(f);
+});
+cameraUpload.addEventListener("change", e => {
+const f = e.target.files[0];
+if(!f) return;
+const reader = new FileReader();
+reader.onload = ev => { tempImgData = ev.target.result; fileTip.innerText = "拍摄图片"; };
+reader.readAsDataURL(f);
+});
 
-function openAddModal(mode){
-editTargetId = null;
-currentBindMode = mode;
-tempClockNum = 0;
-currentClockCount.innerText = "0";
+document.getElementById("addGoodsBtn").addEventListener("click", () => {
+modalTitle.innerText = "添加物品";
+editId.value = "";
 nameInput.value = "";
 priceInput.value = "";
-cateSelect.value = "数码";
-tempImg = "";
-fileNameText.innerText = "未选择文件";
-// 清空全部输入
 minYear.value = "";minMonth.value = "";minDay.value = "";
 maxYear.value = "";maxMonth.value = "";maxDay.value = "";
-startDate.value = "";
-tMinYear.value = "";tMinMonth.value = "";tMinDay.value = "";
-tMaxYear.value = "";tMaxMonth.value = "";tMaxDay.value = "";
-totalEstCount.value = "";batchCount.value = "1";
-// 切换输入框显示
-modeNormal.style.display = "none";
-modeTime.style.display = "none";
-modeClock.style.display = "none";
-if(mode === "normal") modeNormal.style.display = "block";
-if(mode === "time") modeTime.style.display = "block";
-if(mode === "clock") modeClock.style.display = "block";
-document.getElementById("modalTitle").innerText = "添加物品";
+tempImgData = "";
+fileTip.innerText = "未选择图片";
 delBtn.style.display = "none";
 editModal.style.display = "flex";
-}
+});
 function openEditModal(id){
-const item = goodsList.find(g=>g.id === id);
+const item = goodsArr.find(i => i.id === id);
 if(!item) return;
-editTargetId = id;
-currentBindMode = item.mode;
-tempClockNum = Number(item.clockTotal) || 0;
-currentClockCount.innerText = tempClockNum;
+modalTitle.innerText = "编辑物品";
+editId.value = id;
 nameInput.value = item.name;
-priceInput.value = item.price;
 cateSelect.value = item.category;
-tempImg = item.img || "";
-fileNameText.innerText = tempImg ? "已上传图片" : "未选择文件";
-// 清空所有输入再回填
-minYear.value = "";minMonth.value = "";minDay.value = "";
-maxYear.value = "";maxMonth.value = "";maxDay.value = "";
-startDate.value = "";
-tMinYear.value = "";tMinMonth.value = "";tMinDay.value = "";
-tMaxYear.value = "";tMaxMonth.value = "";tMaxDay.value = "";
-totalEstCount.value = "";batchCount.value = "1";
-modeNormal.style.display = "none";
-modeTime.style.display = "none";
-modeClock.style.display = "none";
-if(item.mode === "normal"){
-modeNormal.style.display = "block";
+priceInput.value = item.price;
 minYear.value = item.minYear||"";
 minMonth.value = item.minMonth||"";
 minDay.value = item.minDay||"";
 maxYear.value = item.maxYear||"";
 maxMonth.value = item.maxMonth||"";
 maxDay.value = item.maxDay||"";
-}
-if(item.mode === "time"){
-modeTime.style.display = "block";
-startDate.value = item.startDate||"";
-tMinYear.value = item.tMinYear||"";
-tMinMonth.value = item.tMinMonth||"";
-tMinDay.value = item.tMinDay||"";
-tMaxYear.value = item.tMaxYear||"";
-tMaxMonth.value = item.tMaxMonth||"";
-tMaxDay.value = item.tMaxDay||"";
-}
-if(item.mode === "clock"){
-modeClock.style.display = "block";
-totalEstCount.value = item.totalEstCount||"";
-}
-document.getElementById("modalTitle").innerText = "编辑物品";
+tempImgData = item.img||"";
+fileTip.innerText = tempImgData ? "已上传图片" : "未选择图片";
 delBtn.style.display = "block";
 editModal.style.display = "flex";
 }
-// 关闭弹窗
-cancelBtn.addEventListener("click",()=>{editModal.style.display = "none";})
-editModal.addEventListener("click",function(e){
-if(e.target === editModal) editModal.style.display = "none";
-})
-// 批量打卡次数添加
-addBatchBtn.addEventListener("click",()=>{
-const num = Number(batchCount.value) || 1;
-tempClockNum += num;
-currentClockCount.innerText = tempClockNum;
-})
-// 图片上传切换
-uploadBtns.forEach(btn=>{
-btn.addEventListener("click",function(){
-uploadBtns.forEach(b=>b.classList.remove("active"));
-this.classList.add("active");
-uploadMode = this.dataset.type;
-})
-})
-uploadBtn.addEventListener("click",()=>{
-if(uploadMode === "album") fileInput.click();
-else cameraInput.click();
-})
-fileInput.addEventListener("change",function(e){
-const file = e.target.files[0];
-if(!file) return;
-const reader = new FileReader();
-reader.onload = ev=>{
-tempImg = ev.target.result;
-fileNameText.innerText = file.name;
-}
-reader.readAsDataURL(file);
-})
-cameraInput.addEventListener("change",function(e){
-const file = e.target.files[0];
-if(!file) return;
-const reader = new FileReader();
-reader.onload = ev=>{
-tempImg = ev.target.result;
-fileNameText.innerText = "拍摄图片";
-}
-reader.readAsDataURL(file);
-})
-// 保存物品
-saveBtn.addEventListener("click",()=>{
+cancelBtn.addEventListener("click", () => editModal.style.display = "none");
+editModal.addEventListener("click", e => { if(e.target === editModal) editModal.style.display = "none"; });
+saveBtn.addEventListener("click", () => {
 const name = nameInput.value.trim();
-const price = Number(priceInput.value);
 const cate = cateSelect.value;
-if(!name || isNaN(price) || price <= 0){
-alert("请填写有效的物品名称和价格");
-return;
-}
-let newItem = {
-id: editTargetId || Date.now().toString(),
-name,
-price,
-category: cate,
-img: tempImg,
-mode: currentBindMode
+const price = Number(priceInput.value);
+if(!name || isNaN(price) || price <= 0) return alert("请填写有效名称与价格");
+const minTotal = calcTotalDay(minYear.value, minMonth.value, minDay.value);
+if(minTotal <= 0) return alert("必须填写最少可用时长");
+const goodsData = {
+id: editId.value || Date.now().toString(),
+name,category:cate,price,img:tempImgData,
+minYear:minYear.value,minMonth:minMonth.value,minDay:minDay.value,
+maxYear:maxYear.value,maxMonth:maxMonth.value,maxDay:maxDay.value
 };
-if(currentBindMode === "normal"){
-newItem.minYear = minYear.value;
-newItem.minMonth = minMonth.value;
-newItem.minDay = minDay.value;
-newItem.maxYear = maxYear.value;
-newItem.maxMonth = maxMonth.value;
-newItem.maxDay = maxDay.value;
-if(!newItem.minYear && !newItem.minMonth && !newItem.minDay){
-alert("通用台账必须填写最少可用时长");
-return;
-}
-}
-if(currentBindMode === "time"){
-newItem.startDate = startDate.value;
-newItem.tMinYear = tMinYear.value;
-newItem.tMinMonth = tMinMonth.value;
-newItem.tMinDay = tMinDay.value;
-newItem.tMaxYear = tMaxYear.value;
-newItem.tMaxMonth = tMaxMonth.value;
-newItem.tMaxDay = tMaxDay.value;
-if(!newItem.startDate || (!newItem.tMinYear && !newItem.tMinMonth && !newItem.tMinDay)){
-alert("时段台账必须填写起始日期与最少预估时长");
-return;
-}
-}
-if(currentBindMode === "clock"){
-newItem.clockTotal = tempClockNum;
-newItem.totalEstCount = totalEstCount.value;
-}
-if(editTargetId){
-const idx = goodsList.findIndex(g=>g.id === editTargetId);
-goodsList[idx] = newItem;
+if(editId.value){
+const idx = goodsArr.findIndex(i => i.id === editId.value);
+goodsArr[idx] = goodsData;
 }else{
-goodsList.push(newItem);
+goodsArr.push(goodsData);
 }
-localStorage.setItem(STORAGE_KEY, JSON.stringify(goodsList));
+localStorage.setItem(STORAGE_KEY, JSON.stringify(goodsArr));
 editModal.style.display = "none";
-renderAllPages();
-})
-// 删除物品
-delBtn.addEventListener("click",()=>{
+renderCateTab();
+renderGoodsList();
+});
+delBtn.addEventListener("click", () => {
 if(!confirm("确定删除该物品？删除后无法恢复")) return;
-goodsList = goodsList.filter(g=>g.id !== editTargetId);
-localStorage.setItem(STORAGE_KEY, JSON.stringify(goodsList));
+goodsArr = goodsArr.filter(i => i.id !== editId.value);
+localStorage.setItem(STORAGE_KEY, JSON.stringify(goodsArr));
 editModal.style.display = "none";
-renderAllPages();
-})
+renderCateTab();
+renderGoodsList();
+});
 
-// ====================== 全局页面渲染入口 ======================
-function renderAllPages(){
-renderSinglePage("normal");
-renderSinglePage("time");
-renderSinglePage("clock");
-renderStatList();
+// 右下角猫咪导航逻辑
+const tabTrigger = document.getElementById("tabTrigger");
+const tabNav = document.getElementById("tabNav");
+let navHideTimer = null;
+function showBottomNav(){
+tabNav.classList.add("show-nav");
+tabTrigger.classList.add("hide-cat");
+clearTimeout(navHideTimer);
+navHideTimer = setTimeout(hideBottomNav, 2000);
 }
-// 页面初始化直接渲染全部页面（无版权弹窗阻断）
-renderAllPages();
+function hideBottomNav(){
+tabNav.classList.remove("show-nav");
+tabTrigger.classList.remove("hide-cat");
+clearTimeout(navHideTimer);
+}
+tabTrigger.addEventListener("click", showBottomNav);
+tabTrigger.addEventListener("touchstart", showBottomNav);
+tabNav.addEventListener("click", () => {
+clearTimeout(navHideTimer);
+navHideTimer = setTimeout(hideBottomNav, 2000);
+});
+
+// 底部页面切换
+const navItems = document.querySelectorAll(".nav-item");
+navItems.forEach(item => {
+item.addEventListener("click", () => {
+navItems.forEach(n => n.classList.remove("active"));
+item.classList.add("active");
+const page = item.dataset.page;
+if(page === "statPage") renderStatPage();
+else renderCateTab(),renderGoodsList();
+});
+});
+
+// 初始化
+renderCateSelect();
+renderCateTab();
+renderGoodsList();
 })
 </script>
 </body>
