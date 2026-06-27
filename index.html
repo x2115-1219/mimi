@@ -1,18 +1,32 @@
 <!--
-米仓小记 V1.4.0.4
-迭代内容：仅新增第二套【时段连续摊销】核算模式，暂不加入打卡模式
-修复：统计页/时段页点击分类不再跳回台账主页，仅本地筛选
-页面结构：时段台账｜物品台账｜成本统计
+米仓小记 V1.4.0.6
+更新日志：
+1. 集成V1.4.0.5全部弹窗功能：顶部i信息按钮、三卡片一级弹窗、二级弹窗返回箭头+关闭叉
+2. 填入完整用户协议文本，作者的话、使用教程预留空白区域待后续补充
+3. 基底版本V1.4.0.4，完整保留时段摊销、分类筛选、长按删分类、猫咪导航、本地存储等全部原有功能
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>米仓小记 V1.4.0.4</title>
+<title>米仓小记 V1.4.0.6</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif;}
 body{background:#fff9e6;padding:16px;padding-bottom:70px;min-height:100vh;}
+
+/* 顶部信息按钮（V1.4.0.5新增） */
+.info-btn{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:1px solid #b89650;
+  background:#fff;
+  font-size:18px;
+  color:#6b5427;
+  cursor:pointer;
+  margin-bottom:10px;
+}
 
 /* 搜索模块 */
 .search-icon{width:24px;height:24px;fill:#333;cursor:pointer;margin-left:auto;margin-bottom:16px;display:block;}
@@ -67,7 +81,103 @@ input[type="text"],input[type="number"],select,input[type="date"]{width:100%;pad
 .cancel-btn{flex:1;padding:11px;border:1px solid #d4c3a3;background:#fff;border-radius:7px;cursor:pointer;}
 .del-goods-btn{width:100%;margin-top:10px;padding:11px;background:#c45141;color:#fff;border:none;border-radius:7px;cursor:pointer;display:none;}
 
-/* 统计页面样式 */
+/* 信息弹窗样式 V1.4.0.5新增，层级最高 */
+.info-mask-first{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.35);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1001;
+  padding:16px;
+}
+.info-pop-first{
+  width:100%;
+  max-width:680px;
+  background:#fff;
+  border-radius:12px;
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.letter-row-top{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.letter-card{
+  padding:22px 12px;
+  border:1px solid #d4c3a3;
+  border-radius:8px;
+  text-align:center;
+  cursor:pointer;
+  transition:0.2s;
+}
+.letter-card:hover{
+  background:#f9f3e6;
+  border-color:#b89650;
+}
+.letter-card h3{
+  color:#6b5427;
+  margin-bottom:10px;
+  font-size:16px;
+}
+.letter-card p{
+  font-size:13px;
+  color:#888;
+}
+.letter-card-bottom{
+  width:60%;
+  margin:0 auto;
+}
+.info-mask-second{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1002;
+  padding:16px;
+}
+.info-pop-second{
+  width:100%;
+  max-width:600px;
+  max-height:75vh;
+  overflow-y:auto;
+  background:#fff;
+  border-radius:12px;
+  padding:24px;
+  position:relative;
+}
+.pop-header-bar{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  position:absolute;
+  top:16px;
+  right:16px;
+}
+.back-btn{
+  font-size:22px;
+  cursor:pointer;
+  color:#6b5427;
+}
+.close-pop-x{
+  font-size:22px;
+  cursor:pointer;
+  color:#666;
+}
+.pop-content-wrap{
+  margin-top:30px;
+  line-height:1.75;
+  color:#333;
+  white-space:pre-line;
+}
+
+/* 页面区分 */
 .stat-page{display:none;}
 .time-page{display:none;}
 .goods-page{display:none;}
@@ -100,6 +210,9 @@ input[type="text"],input[type="number"],select,input[type="date"]{width:100%;pad
 </style>
 </head>
 <body>
+<!-- V1.4.0.5 新增 信息i按钮，全部分类上方 -->
+<button class="info-btn" id="openInfoBtn">i</button>
+
 <!-- 搜索模块 -->
 <svg class="search-icon" id="searchToggle" viewBox="0 0 24 24">
 <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -152,6 +265,38 @@ input[type="text"],input[type="number"],select,input[type="date"]{width:100%;pad
 <button class="stat-select-btn" id="cancelAllBtn">取消全选</button>
 </div>
 <div class="stat-item-list" id="statListBox"></div>
+</div>
+
+<!-- V1.4.0.5 新增 一级信息弹窗：三封信卡片 -->
+<div class="info-mask-first" id="infoMaskFirst">
+<div class="info-pop-first">
+<div class="letter-row-top">
+<div class="letter-card" id="cardAgree">
+<h3>用户协议</h3>
+<p>点击查看完整协议</p>
+</div>
+<div class="letter-card" id="cardAuthor">
+<h3>作者的话</h3>
+<p>暂未补充内容</p>
+</div>
+</div>
+<div class="letter-card letter-card-bottom" id="cardTutorial">
+<h3>使用教程</h3>
+<p>暂未补充内容</p>
+</div>
+</div>
+</div>
+
+<!-- V1.4.0.5 新增 二级详情弹窗：返回< + 关闭× -->
+<div class="info-mask-second" id="infoMaskSecond">
+<div class="info-pop-second">
+<div class="pop-header-bar">
+<span class="back-btn" id="backFirstPop">&lt;</span>
+<span class="close-pop-x" id="closeAllInfoPop">×</span>
+</div>
+<h3 id="infoPopTitle"></h3>
+<div class="pop-content-wrap" id="infoPopContent"></div>
+</div>
 </div>
 
 <!-- 新增/编辑物品弹窗（双核算模式切换） -->
@@ -288,6 +433,72 @@ let tempImgData = "";
 let uploadMode = "album";
 let selectedStatIds = new Set();
 let currentActivePage = "goodsPage";
+
+// V1.4.0.6 用户协议固定文本
+const TEXT_AGREE = `©2026米仓小记原创作者b站@布儡是k2，及共创作者@正常，保留全部计算机软件著作权
+1.本软件为原创工具，未经书面授权禁止破解、倒卖、篡改源码；
+2.禁止提取界面、逻辑、功能制作同类盈利产品；
+3.盗版商用传播均构成侵权，作者可追究法律责任；`;
+const TEXT_AUTHOR = "暂未补充作者的话内容，后续提供后替换";
+const TEXT_TUTORIAL = "暂未补充使用教程内容，后续提供后替换";
+
+// 信息弹窗DOM缓存
+const openInfoBtn = document.getElementById("openInfoBtn");
+const infoMaskFirst = document.getElementById("infoMaskFirst");
+const infoMaskSecond = document.getElementById("infoMaskSecond");
+const backFirstPop = document.getElementById("backFirstPop");
+const closeAllInfoPop = document.getElementById("closeAllInfoPop");
+const cardAgree = document.getElementById("cardAgree");
+const cardAuthor = document.getElementById("cardAuthor");
+const cardTutorial = document.getElementById("cardTutorial");
+const infoPopTitle = document.getElementById("infoPopTitle");
+const infoPopContent = document.getElementById("infoPopContent");
+
+// 打开一级三卡片弹窗
+openInfoBtn.addEventListener("click", ()=>{
+  infoMaskFirst.style.display = "flex";
+});
+// 返回一级弹窗
+backFirstPop.addEventListener("click", ()=>{
+  infoMaskSecond.style.display = "none";
+  infoMaskFirst.style.display = "flex";
+});
+// 完全关闭所有信息弹窗
+closeAllInfoPop.addEventListener("click", ()=>{
+  infoMaskFirst.style.display = "none";
+  infoMaskSecond.style.display = "none";
+});
+// 点击协议卡片
+cardAgree.addEventListener("click", ()=>{
+  infoPopTitle.innerText = "用户协议";
+  infoPopContent.innerText = TEXT_AGREE;
+  infoMaskFirst.style.display = "none";
+  infoMaskSecond.style.display = "flex";
+});
+// 点击作者卡片
+cardAuthor.addEventListener("click", ()=>{
+  infoPopTitle.innerText = "作者的话";
+  infoPopContent.innerText = TEXT_AUTHOR;
+  infoMaskFirst.style.display = "none";
+  infoMaskSecond.style.display = "flex";
+});
+// 点击教程卡片
+cardTutorial.addEventListener("click", ()=>{
+  infoPopTitle.innerText = "使用教程";
+  infoPopContent.innerText = TEXT_TUTORIAL;
+  infoMaskFirst.style.display = "none";
+  infoMaskSecond.style.display = "flex";
+});
+// 遮罩空白关闭弹窗
+infoMaskFirst.addEventListener("click", (e)=>{
+  if(e.target === infoMaskFirst) infoMaskFirst.style.display = "none";
+});
+infoMaskSecond.addEventListener("click", (e)=>{
+  if(e.target === infoMaskSecond){
+    infoMaskFirst.style.display = "none";
+    infoMaskSecond.style.display = "none";
+  }
+});
 
 // 搜索开关逻辑
 const searchToggle = document.getElementById("searchToggle");
